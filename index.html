@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EARTH BINGO</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:12px;font-family:Arial,sans-serif;text-align:center;color:white;background:linear-gradient(135deg,#061923,#12505a,#061923)}
+.container{max-width:850px;margin:auto;padding:18px;background:#071d2bdd;border:1px solid #3b6975;border-radius:18px}
+h1{color:#5fffd2}
+.panel{background:#102f3b;padding:14px;margin:12px 0;border-radius:12px}
+.balance{font-size:25px;font-weight:bold;color:#ffd166}
+input,select,button{padding:11px;margin:5px;border:0;border-radius:8px;font-size:15px;max-width:100%}
+button{background:#5fffd2;color:#061b20;cursor:pointer;font-weight:bold}
+button:disabled{opacity:.45;cursor:not-allowed}
+.settings{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.setting{background:#102f3b;padding:10px;border-radius:10px}
+.card{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;max-width:500px;margin:12px auto}
+.cell{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:7px;background:#e8f1f3;color:#122a35;font-weight:bold;font-size:18px}
+.header{background:#147d78;color:white}
+.marked{background:#e64b3c;color:white}
+.free{background:#ffd166;color:#061b20;font-size:12px}
+#lastNumber{width:100px;height:100px;margin:20px auto;display:flex;align-items:center;justify-content:center;border:5px solid #5fffd2;border-radius:50%;background:#102f3b;color:#ffd166;font-size:36px;font-weight:bold}
+#message{min-height:35px;color:#ffd166;font-weight:bold}
+#calledNumbers{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
+.called{padding:7px;border-radius:6px;background:#147d78}
+.progress-wrap{max-width:500px;margin:10px auto;background:#24434d;border-radius:10px;overflow:hidden;height:16px}
+#progressBar{height:100%;width:0%;background:#5fffd2;transition:width .2s}
+.countline{font-size:18px;font-weight:bold;color:#ffd166}
+.small{font-size:13px;color:#c8dce2}
+@media(max-width:480px){.container{padding:10px}.cell{min-height:42px;font-size:15px}input,select,button{max-width:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🌍 EARTH BINGO</h1>
+<p>Kaardii filadhu, taphadhu, BINGO argadhu!</p>
+<p class="small">Kaardii 200; taphattoota 1–200.</p>
+
+<div class="panel">
+<p>WALLET DEMO</p>
+<div class="balance"><span id="balance">1000.00</span> birr</div>
+<input id="amount" type="number" min="1" placeholder="Amount">
+<button id="depositBtn">Deposit Demo</button>
+<button id="withdrawBtn">Withdraw Demo</button>
+</div>
+
+<div class="settings">
+<div class="setting">
+<label for="cardChoice">Kaardii:</label><br>
+<select id="cardChoice"></select>
+</div>
+<div class="setting">
+<label for="stakeChoice">Stake:</label><br>
+<select id="stakeChoice">
+<option value="10">10 birr</option><option value="20">20 birr</option><option value="30">30 birr</option>
+<option value="50" selected>50 birr</option><option value="100">100 birr</option><option value="200">200 birr</option>
+<option value="300">300 birr</option><option value="500">500 birr</option><option value="1000">1000 birr</option>
+</select>
+</div>
+<div class="setting">
+<label for="players">Baayina taphattootaa:</label><br>
+<input id="players" type="number" min="1" max="200" value="10" style="width:125px">
+</div>
+</div>
+
+<div class="panel">
+<p>Pool: <b id="pool">500</b> birr</p>
+<p>Badhaasa 80%: <b id="prize">400</b> birr</p>
+<p>Haftee 20%: <b id="remainder">100</b> birr</p>
+</div>
+
+<div>
+<button id="startBtn">▶ Tapha Jalqabi</button>
+<button id="newCardBtn">🔄 Kaardii Haaraa</button>
+<button id="stopBtn" disabled>⏹ Dhaabi</button>
+</div>
+
+<h3>Lakkoofsa Waamame</h3>
+<div id="lastNumber">--</div>
+<p class="countline">Waamame: <span id="calledCount">0</span> / 75 | Hafe: <span id="remainingCount">75</span></p>
+<div class="progress-wrap"><div id="progressBar"></div></div>
+<p><button id="voiceBtn">🔊 Sagalee: ON</button><button id="repeatBtn">🔁 Irra deebi’i</button></p>
+<p id="message">Stake fi kaardii filadhu; tapha jalqabi.</p>
+<h2 style="color:#5fffd2;letter-spacing:7px">B I N G O</h2>
+<div id="card" class="card"></div>
+<h3>Lakkoofsota Waamaman</h3>
+<div id="calledNumbers"></div>
+<p class="small">Demo barnootaa qofa. Maallaqa dhugaa miti.</p>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const balanceEl=$("balance"), amountEl=$("amount");
+const cardChoice=$("cardChoice"), stakeChoice=$("stakeChoice");
+const playersEl=$("players"), poolEl=$("pool");
+const prizeEl=$("prize"), remainderEl=$("remainder");
+const cardEl=$("card"), lastNumberEl=$("lastNumber");
+const messageEl=$("message"), calledNumbersEl=$("calledNumbers");
+const calledCountEl=$("calledCount"), remainingCountEl=$("remainingCount");
+const progressBar=$("progressBar"), voiceBtn=$("voiceBtn");
+const repeatBtn=$("repeatBtn"), startBtn=$("startBtn");
+const stopBtn=$("stopBtn"), newCardBtn=$("newCardBtn");
+let balance=1000, currentCard=[], calledNumbers=[];
+let timer=null, gameRunning=false, gameFinished=false;
+let prizePaid=false, voiceEnabled=true;
+for(let i=1;i<=200;i++){const option=document.createElement("option");option.value=i;option.textContent="Kaardii "+i;cardChoice.appendChild(option);}
+function updateBalance(){balanceEl.textContent=balance.toFixed(2);}
+function getPlayers(){const n=Number(playersEl.value);return Number.isInteger(n)&&n>=1&&n<=200?n:null;}
+function calculatePool(){const players=getPlayers(),stake=Number(stakeChoice.value);if(!players){poolEl.textContent=prizeEl.textContent=remainderEl.textContent="0";return null;}const pool=players*stake,prize=pool*.8,remainder=pool*.2;poolEl.textContent=pool.toFixed(2);prizeEl.textContent=prize.toFixed(2);remainderEl.textContent=remainder.toFixed(2);return {players,pool,prize,remainder,stake};}
+function randomUnique(min,max,count){const values=[];while(values.length<count){const n=Math.floor(Math.random()*(max-min+1))+min;if(!values.includes(n))values.push(n);}return values;}
+function generateCard(){const B=randomUnique(1,15,5),I=randomUnique(16,30,5),N=randomUnique(31,45,5),G=randomUnique(46,60,5),O=randomUnique(61,75,5);currentCard=[];for(let r=0;r<5;r++)currentCard.push([B[r],I[r],N[r],G[r],O[r]]);currentCard[2][2]="FREE";renderCard();}
+function renderCard(){cardEl.innerHTML="";["B","I","N","G","O"].forEach(letter=>{const cell=document.createElement("div");cell.className="cell header";cell.textContent=letter;cardEl.appendChild(cell);});for(let r=0;r<5;r++){for(let c=0;c<5;c++){const v=currentCard[r][c],cell=document.createElement("div");cell.className="cell";cell.textContent=v;if(v==="FREE")cell.classList.add("free","marked");else if(calledNumbers.includes(v))cell.classList.add("marked");cardEl.appendChild(cell);}}}
+function renderCalledNumbers(){calledNumbersEl.innerHTML="";calledCountEl.textContent=calledNumbers.length;remainingCountEl.textContent=75-calledNumbers.length;progressBar.style.width=(calledNumbers.length/75*100)+"%";calledNumbers.forEach(n=>{const span=document.createElement("span");span.className="called";span.textContent=n;calledNumbersEl.appendChild(span);});}
+function stopTimer(){if(timer!==null){clearInterval(timer);timer=null;}}
+function checkBingo(){for(let r=0;r<5;r++){if(currentCard[r].every(v=>v==="FREE"||calledNumbers.includes(v)))return true;}for(let c=0;c<5;c++){let ok=true;for(let r=0;r<5;r++){const v=currentCard[r][c];if(v!=="FREE"&&!calledNumbers.includes(v)){ok=false;break;}}if(ok)return true;}let d1=true,d2=true;for(let i=0;i<5;i++){const a=currentCard[i][i],b=currentCard[i][4-i];if(a!=="FREE"&&!calledNumbers.includes(a))d1=false;if(b!=="FREE"&&!calledNumbers.includes(b))d2=false;}return d1||d2;}
+function setControls(enabled){cardChoice.disabled=!enabled;stakeChoice.disabled=!enabled;playersEl.disabled=!enabled;newCardBtn.disabled=!enabled;}
+function numberInOromo(n){const words={1:"tokko",2:"lama",3:"sadii",4:"afur",5:"shan",6:"jaha",7:"torba",8:"saddeet",9:"sagal",10:"kudhan",11:"kudha tokko",12:"kudha lama",13:"kudha sadii",14:"kudha afur",15:"kudha shan",16:"kudha jaha",17:"kudha torba",18:"kudha saddeet",19:"kudha sagal",20:"digdama",30:"soddoma",40:"afurtama",50:"shantama",60:"jahatama",70:"torbaatama"};if(words[n])return words[n];if(n<20)return String(n);const tens=Math.floor(n/10)*10,unit=n%10;return (words[tens]||String(tens))+" fi "+(words[unit]||String(unit));}
+function speakCalledNumber(n){if(!voiceEnabled)return;const letter=n<=15?"B":n<=30?"I":n<=45?"N":n<=60?"G":"O";const phrase=letter+", "+numberInOromo(n);if(window.AndroidVoice&&typeof window.AndroidVoice.speak==="function"){window.AndroidVoice.speak(phrase);return;}if(!("speechSynthesis" in window)){messageEl.textContent="Meeshaan sagalee dubbisuu hin deeggaru.";return;}window.speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(phrase);speech.lang="om-ET";speech.rate=.85;window.speechSynthesis.speak(speech);}
+function drawNumber(){if(!gameRunning||gameFinished)return;if(calledNumbers.length>=75){finishGame("Lakkoofsotni 75 hundi waamamaniiru.",false);return;}let n;do{n=Math.floor(Math.random()*75)+1;}while(calledNumbers.includes(n));calledNumbers.push(n);lastNumberEl.textContent=n;renderCard();renderCalledNumbers();speakCalledNumber(n);if(checkBingo()){finishGame("🎉 BINGO! Kaardii "+cardChoice.value+" irratti argatte!",true);}else if(calledNumbers.length===75){finishGame("Lakkoofsotni 75 hundi waamamaniiru. BINGO hin argamne.",false);}}
+function finishGame(message,winner){if(gameFinished)return;stopTimer();if("speechSynthesis"in window)window.speechSynthesis.cancel();gameRunning=false;gameFinished=true;startBtn.disabled=true;stopBtn.disabled=true;if(winner&&!prizePaid){const totals=calculatePool();if(totals){balance+=totals.prize;updateBalance();prizePaid=true;message+=" Badhaasa demo: "+totals.prize.toFixed(2)+" Credits.";}}let seconds=10;messageEl.textContent=message+" Sekondii 10 eegi.";timer=setInterval(()=>{seconds--;if(seconds>0){messageEl.textContent=message+" Tapha haaraa jalqabuuf sekondii "+seconds+".";}else{stopTimer();setControls(true);startBtn.disabled=false;messageEl.textContent=message+" Amma tapha haaraa jalqabi.";}},1000);}
+function startGame(){if(gameRunning)return;const totals=calculatePool();if(!totals){messageEl.textContent="Baayina taphattootaa 1 hanga 200 galchi.";return;}if(balance<totals.stake){messageEl.textContent="Wallet demo kee stake kanaaf gahaa miti.";return;}balance-=totals.stake;updateBalance();calledNumbers=[];gameFinished=false;prizePaid=false;gameRunning=true;lastNumberEl.textContent="--";renderCalledNumbers();renderCard();setControls(false);startBtn.disabled=true;stopBtn.disabled=false;messageEl.textContent="Tapha jalqabde. Lakkoofsotni sekondii tokko keessatti waamamu.";stopTimer();timer=setInterval(drawNumber,1000);}
+function stopGame(){if(!gameRunning)return;stopTimer();if("speechSynthesis"in window)window.speechSynthesis.cancel();gameRunning=false;gameFinished=true;setControls(true);startBtn.disabled=false;stopBtn.disabled=true;messageEl.textContent="Tapha dhaabde. Badhaasni hin kennamu.";}
+function newCard(){if(gameRunning)return;stopTimer();if("speechSynthesis"in window)window.speechSynthesis.cancel();calledNumbers=[];gameFinished=false;prizePaid=false;lastNumberEl.textContent="--";renderCalledNumbers();generateCard();startBtn.disabled=false;stopBtn.disabled=true;messageEl.textContent="Kaardii "+cardChoice.value+" filatameera. Tapha jalqabi.";}
+cardChoice.addEventListener("change",newCard);newCardBtn.addEventListener("click",newCard);startBtn.addEventListener("click",startGame);stopBtn.addEventListener("click",stopGame);
+voiceBtn.addEventListener("click",()=>{voiceEnabled=!voiceEnabled;voiceBtn.textContent=voiceEnabled?"🔊 Sagalee: ON":"🔇 Sagalee: OFF";if(!voiceEnabled&&"speechSynthesis"in window)window.speechSynthesis.cancel();});
+repeatBtn.addEventListener("click",()=>{if(!calledNumbers.length){messageEl.textContent="Lakkoofsi tokko illee hin waam amne.";return;}speakCalledNumber(calledNumbers[calledNumbers.length-1]);});
+stakeChoice.addEventListener("change",calculatePool);playersEl.addEventListener("input",()=>{const n=getPlayers();if(!n)messageEl.textContent="Taphattoota 1 hanga 200 galchi.";calculatePool();});
+$("depositBtn").addEventListener("click",()=>{const amount=Number(amountEl.value);if(!Number.isFinite(amount)||amount<=0){messageEl.textContent="Amount sirrii galchi.";return;}balance+=amount;updateBalance();amountEl.value="";messageEl.textContent="Demo Credits wallet irratti dabalame.";});
+$("withdrawBtn").addEventListener("click",()=>{const amount=Number(amountEl.value);if(!Number.isFinite(amount)||amount<=0){messageEl.textContent="Amount sirrii galchi.";return;}if(amount>balance){messageEl.textContent="Wallet demo kee gahaa miti.";return;}balance-=amount;updateBalance();amountEl.value="";messageEl.textContent="Demo Credits wallet irraa hir'ifame.";});
+generateCard();updateBalance();calculatePool();renderCalledNumbers();
+</script>
+</body>
+</html>
